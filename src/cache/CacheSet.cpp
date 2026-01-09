@@ -7,6 +7,7 @@ CacheSet::CacheSet(size_t associativity)
         line.tag = 0;
         line.last_used = 0;
         line.inserted_at = 0;
+        line.freq = 0;
     }
     }
 
@@ -22,6 +23,7 @@ bool CacheSet::access(size_t tag,
         if (line.valid && line.tag == tag) {
             hit = true;
             line.last_used = timestamp;
+            line.freq++;
             return true;
         }
     }
@@ -46,6 +48,8 @@ bool CacheSet::access(size_t tag,
                 victim = &line;
             else if (policy == "FIFO" && line.inserted_at < victim->inserted_at)
                 victim = &line;
+            else if (policy == "LFU" && line.freq < victim->freq)
+                victim = &line;
         }
     }
 
@@ -54,6 +58,7 @@ bool CacheSet::access(size_t tag,
     victim->valid = true;
     victim->inserted_at = timestamp;
     victim->last_used = timestamp;
+    victim->freq = 1;
 
     return false;
 }
