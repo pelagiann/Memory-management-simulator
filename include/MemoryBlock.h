@@ -6,6 +6,7 @@
 struct MemoryBlock {
 	size_t start;
 	size_t size;
+	size_t requested;   // bytes actually requested (size - requested = internal frag)
 	bool free;
 	int block_id;
 

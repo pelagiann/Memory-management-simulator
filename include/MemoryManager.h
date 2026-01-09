@@ -10,6 +10,8 @@ private:
 	int next_block_id;
 	size_t alloc_requests;
 	size_t alloc_failures;
+	static const size_t ALIGNMENT = 8;   // requests rounded up to this granularity
+	size_t align_up(size_t size) const;
 	MemoryBlock* split_and_allocate(MemoryBlock* block, size_t req_size);
 
 public:

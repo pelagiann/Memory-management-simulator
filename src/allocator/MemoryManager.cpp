@@ -40,6 +40,10 @@ void MemoryManager::dump() const {
     std::cout << std::dec;
 }
 
+size_t MemoryManager::align_up(size_t size) const {
+    return (size + ALIGNMENT - 1) / ALIGNMENT * ALIGNMENT;
+}
+
 MemoryBlock* MemoryManager::split_and_allocate(
     MemoryBlock* block, size_t req_size) {
 
@@ -72,11 +76,14 @@ MemoryBlock* MemoryManager::split_and_allocate(
 
 int MemoryManager::allocate_first_fit(size_t req_size) {
     alloc_requests++;
+    size_t aligned = align_up(req_size);
     MemoryBlock* curr = head;
 
     while (curr) {
-        if (curr->free && curr->size >= req_size) {
-            return split_and_allocate(curr, req_size)->block_id;
+        if (curr->free && curr->size >= aligned) {
+            MemoryBlock* block = split_and_allocate(curr, aligned);
+            block->requested = req_size;
+            return block->block_id;
         }
         curr = curr->next;
     }
@@ -86,13 +93,14 @@ int MemoryManager::allocate_first_fit(size_t req_size) {
 
 int MemoryManager::allocate_best_fit(size_t req_size) {
     alloc_requests++;
+    size_t aligned = align_up(req_size);
     MemoryBlock* curr = head;
     MemoryBlock* best = nullptr;
     size_t best_diff = SIZE_MAX;
 
     while (curr) {
-        if (curr->free && curr->size >= req_size) {
-            size_t diff = curr->size - req_size;
+        if (curr->free && curr->size >= aligned) {
+            size_t diff = curr->size - aligned;
             if (diff < best_diff) {
                 best_diff = diff;
                 best = curr;
@@ -106,17 +114,20 @@ int MemoryManager::allocate_best_fit(size_t req_size) {
         return -1;
     }
 
-    return split_and_allocate(best, req_size)->block_id;
+    MemoryBlock* block = split_and_allocate(best, aligned);
+    block->requested = req_size;
+    return block->block_id;
 }
 
 int MemoryManager::allocate_worst_fit(size_t req_size) {
     alloc_requests++;
+    size_t aligned = align_up(req_size);
     MemoryBlock* curr = head;
     MemoryBlock* worst = nullptr;
     size_t worst_size = 0;
 
     while (curr) {
-        if (curr->free && curr->size >= req_size) {
+        if (curr->free && curr->size >= aligned) {
             if (curr->size > worst_size) {
                 worst_size = curr->size;
                 worst = curr;
@@ -130,7 +141,9 @@ int MemoryManager::allocate_worst_fit(size_t req_size) {
         return -1;
     }
 
-    return split_and_allocate(worst, req_size)->block_id;
+    MemoryBlock* block = split_and_allocate(worst, aligned);
+    block->requested = req_size;
+    return block->block_id;
 }
 
 
@@ -242,7 +255,16 @@ double MemoryManager::allocation_failure_rate() const {
 }
 
 size_t MemoryManager::internal_fragmentation() const {
-    return 0;
+    size_t wasted = 0;
+    MemoryBlock* curr = head;
+
+    while (curr) {
+        if (!curr->free)
+            wasted += curr->size - curr->requested;
+        curr = curr->next;
+    }
+
+    return wasted;
 }
 
 size_t MemoryManager::get_block_start(int block_id) const {
@@ -268,7 +290,7 @@ void MemoryManager::print_stats() const {
     std::cout << "Allocation failures: " << get_alloc_failures() << "\n";
     std::cout << "Allocation success rate: "<< allocation_success_rate() *100 << "%\n";
     std::cout << "Allocation failure rate: "<< allocation_failure_rate() * 100 << "%\n";
-    std::cout << "Internal fragmentation: " << internal_fragmentation() << " bytes (exact-fit allocation)\n";
+    std::cout << "Internal fragmentation: " << internal_fragmentation() << " bytes\n";
     std::cout << "External fragmentation: " << external_fragmentation() << "\n";
 }
 
