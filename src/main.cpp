@@ -1,6 +1,7 @@
 #include "MemoryManager.h"
 #include "cache/Cache.h"
 #include "vm/VirtualMemoryManager.h"
+#include "buddy/BuddyAllocator.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -8,7 +9,9 @@
 
 int main() {
     MemoryManager mm;
+    BuddyAllocator buddy;
     bool initialized = false;
+    bool buddy_initialized = false;
 
     std::string line;
 
@@ -49,9 +52,14 @@ L1.set_next_level(&L2);
             std::cout << "  access <address>              Access memory address via cache\n";
             std::cout << "  cache_stats                  Show cache statistics\n";
             std::cout << "  vm_stats                     Show virtual memory statistics\n";
+            std::cout << "  buddy_init <size>            Initialize buddy allocator (power of two)\n";
+            std::cout << "  buddy_alloc <size>           Allocate via buddy system\n";
+            std::cout << "  buddy_free <block_id>        Free a buddy block\n";
+            std::cout << "  buddy_dump                   Show buddy memory layout\n";
+            std::cout << "  buddy_stats                  Show buddy statistics\n";
             std::cout << "  exit                          Exit simulator\n";
 
-        }   
+        }
 
 
         else if (cmd == "init") {
@@ -160,6 +168,84 @@ L1.set_next_level(&L2);
 
         else if (cmd == "vm_stats") {
             vmm.print_stats();
+        }
+
+        else if (cmd == "buddy_init") {
+            size_t size;
+            ss >> size;
+
+            if (!ss || size == 0) {
+                std::cout << "Usage: buddy_init <size>\n";
+                continue;
+            }
+
+            if (!buddy.init(size)) {
+                std::cout << "Size must be a power of two\n";
+                continue;
+            }
+
+            buddy_initialized = true;
+            std::cout << "Initialized buddy allocator with size " << size << "\n";
+        }
+
+        else if (cmd == "buddy_alloc") {
+            if (!buddy_initialized) {
+                std::cout << "Buddy allocator not initialized\n";
+                continue;
+            }
+
+            size_t size;
+            ss >> size;
+
+            if (!ss) {
+                std::cout << "Usage: buddy_alloc <size>\n";
+                continue;
+            }
+
+            int id = buddy.allocate(size);
+
+            if (id == -1)
+                std::cout << "Allocation failed\n";
+            else
+                std::cout << "Allocated block id " << id << "\n";
+        }
+
+        else if (cmd == "buddy_free") {
+            if (!buddy_initialized) {
+                std::cout << "Buddy allocator not initialized\n";
+                continue;
+            }
+
+            int id;
+            ss >> id;
+
+            if (!ss) {
+                std::cout << "Usage: buddy_free <block_id>\n";
+                continue;
+            }
+
+            if (buddy.free_block(id))
+                std::cout << "Freed block " << id << "\n";
+            else
+                std::cout << "Invalid block id\n";
+        }
+
+        else if (cmd == "buddy_dump") {
+            if (!buddy_initialized) {
+                std::cout << "Buddy allocator not initialized\n";
+                continue;
+            }
+
+            buddy.dump();
+        }
+
+        else if (cmd == "buddy_stats") {
+            if (!buddy_initialized) {
+                std::cout << "Buddy allocator not initialized\n";
+                continue;
+            }
+
+            buddy.print_stats();
         }
 
         else {

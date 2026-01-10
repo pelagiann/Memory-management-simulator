@@ -50,7 +50,7 @@ C++17 compatible compiler (tested with g++)
 
 ## Building
 ```bash
-g++ -std=c++17 -Iinclude src/main.cpp src/allocator/*.cpp src/cache/*.cpp src/vm/*.cpp -o memory_sim
+g++ -std=c++17 -Iinclude src/main.cpp src/allocator/*.cpp src/cache/*.cpp src/vm/*.cpp src/buddy/*.cpp -o memory_sim
 ```
 ## Running
 Interactive mode:  
