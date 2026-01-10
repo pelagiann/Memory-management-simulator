@@ -83,7 +83,8 @@ void VirtualMemoryManager::access(size_t virtual_address) {
     if (used_frames < max_frames) {
         block_id = allocate_frame();
     } else {
-        block_id = evict_page();
+        evict_page();
+        block_id = allocate_frame();
     }
 
     pte.block_id = block_id;
