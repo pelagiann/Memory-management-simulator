@@ -49,7 +49,7 @@ L1.set_next_level(&L2);
             std::cout << "  free <block_id>              Free allocated block\n";
             std::cout << "  dump                          Show memory layout\n";
             std::cout << "  stats                         Show memory statistics\n";
-            std::cout << "  access <address>              Access memory address via cache\n";
+            std::cout << "  access [pid] <address>       Access address for a process (pid optional, default 0)\n";
             std::cout << "  cache_stats                  Show cache statistics\n";
             std::cout << "  vm_stats                     Show virtual memory statistics\n";
             std::cout << "  buddy_init <size>            Initialize buddy allocator (power of two)\n";
@@ -149,15 +149,19 @@ L1.set_next_level(&L2);
         }
 
         else if (cmd == "access") {
-            size_t address;
-            ss >> address;
+            size_t a;
+            ss >> a;
 
             if (!ss) {
-                std::cout << "Usage: access <virtual_address>\n";
+                std::cout << "Usage: access [pid] <virtual_address>\n";
                 continue;
             }
 
-            vmm.access(address);
+            size_t b;
+            if (ss >> b)
+                vmm.access(a, b);      // a = pid, b = address
+            else
+                vmm.access(0, a);      // default process 0
         }
 
 

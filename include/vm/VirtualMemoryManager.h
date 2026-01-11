@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <queue>
 #include <string>
+#include <utility>
 
 class VirtualMemoryManager {
 private:
@@ -22,8 +23,9 @@ private:
 
     std::string replacement_policy;
 
-    std::unordered_map<size_t, PageTableEntry> page_table;
-    std::queue<size_t> fifo_queue;
+    // pid -> (vpn -> entry): each process has its own page table
+    std::unordered_map<size_t, std::unordered_map<size_t, PageTableEntry>> page_tables;
+    std::queue<std::pair<size_t, size_t>> fifo_queue;   // (pid, vpn) in load order
 
     int allocate_frame();
     int evict_page();
@@ -34,7 +36,7 @@ public:
                          size_t total_memory,
                          const std::string& policy);
 
-    void access(size_t virtual_address);
+    void access(size_t pid, size_t virtual_address);
     void print_stats() const;
 
 private:
